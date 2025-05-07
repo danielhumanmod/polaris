@@ -171,6 +171,11 @@ public class JdbcMetaStoreManagerFactory implements MetaStoreManagerFactory {
   }
 
   @Override
+  public Map<String, PolarisMetaStoreManager> getMetaStoreManagerMap() {
+    return metaStoreManagerMap;
+  }
+
+  @Override
   public synchronized PolarisMetaStoreManager getOrCreateMetaStoreManager(
       RealmContext realmContext) {
     if (!metaStoreManagerMap.containsKey(realmContext.getRealmIdentifier())) {
