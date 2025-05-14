@@ -18,7 +18,9 @@
  */
 package org.apache.polaris.service.task;
 
+import com.google.common.annotations.VisibleForTesting;
 import jakarta.annotation.Nonnull;
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +30,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.apache.polaris.core.config.PolarisConfigurationStore;
 import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.entity.PolarisBaseEntity;
 import org.apache.polaris.core.entity.PolarisEntityType;
@@ -73,11 +76,13 @@ public class TaskExecutorImpl implements TaskExecutor {
   }
 
   public void postConstruct() {
-    TaskRecoveryManager.recoverPendingTasks(metaStoreManagerFactory, this.executorId, this);
+    LOGGER.info("Try to recover pending tasks from TaskExecutorImpl postConstruct");
+    recoverPendingTasks();
   }
 
   public void scheduled() {
-    TaskRecoveryManager.recoverPendingTasks(metaStoreManagerFactory, this.executorId, this);
+    LOGGER.info("Try to recover pending tasks from TaskExecutorImpl scheduled");
+    recoverPendingTasks();
   }
 
   /**
@@ -165,5 +170,15 @@ public class TaskExecutorImpl implements TaskExecutor {
           .addKeyValue("taskEntityName", taskEntity.getName())
           .log("Unable to execute async task");
     }
+  }
+
+  public void recoverPendingTasks() {
+    TaskRecoveryManager.recoverPendingTasks(metaStoreManagerFactory, this.executorId, this);
+  }
+
+  @VisibleForTesting
+  public void recoverPendingTasks(@Nonnull Clock clock) {
+    TaskRecoveryManager.recoverPendingTasks(
+        metaStoreManagerFactory, this.executorId, this, new PolarisConfigurationStore() {}, clock);
   }
 }

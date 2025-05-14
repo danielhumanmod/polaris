@@ -18,9 +18,13 @@
  */
 package org.apache.polaris.service.task;
 
+import jakarta.annotation.Nonnull;
+import java.time.Clock;
+import java.time.ZoneId;
 import java.util.Map;
 import org.apache.polaris.core.PolarisCallContext;
 import org.apache.polaris.core.PolarisDefaultDiagServiceImpl;
+import org.apache.polaris.core.config.PolarisConfigurationStore;
 import org.apache.polaris.core.context.CallContext;
 import org.apache.polaris.core.context.RealmContext;
 import org.apache.polaris.core.entity.TaskEntity;
@@ -40,6 +44,20 @@ public class TaskRecoveryManager {
       MetaStoreManagerFactory metaStoreManagerFactory,
       String executorId,
       TaskExecutor taskExecutor) {
+    recoverPendingTasks(
+        metaStoreManagerFactory,
+        executorId,
+        taskExecutor,
+        new PolarisConfigurationStore() {},
+        Clock.system(ZoneId.systemDefault()));
+  }
+
+  public static void recoverPendingTasks(
+      @Nonnull MetaStoreManagerFactory metaStoreManagerFactory,
+      @Nonnull String executorId,
+      @Nonnull TaskExecutor taskExecutor,
+      @Nonnull PolarisConfigurationStore configurationStore,
+      @Nonnull Clock clock) {
     for (Map.Entry<String, PolarisMetaStoreManager> entry :
         metaStoreManagerFactory.getMetaStoreManagerMap().entrySet()) {
       RealmContext realmContext = entry::getKey;
@@ -48,12 +66,13 @@ public class TaskRecoveryManager {
           metaStoreManagerFactory.getOrCreateSessionSupplier(realmContext).get();
       // Construct a PolarisCallContext since the original one has lost
       PolarisCallContext polarisCallContext =
-          new PolarisCallContext(metastore, new PolarisDefaultDiagServiceImpl());
+          new PolarisCallContext(
+              metastore, new PolarisDefaultDiagServiceImpl(), configurationStore, clock);
       EntitiesResult entitiesResult =
           metaStoreManager.loadTasks(polarisCallContext, executorId, 20, true);
       if (entitiesResult.getReturnStatus() == BaseResult.ReturnStatus.SUCCESS) {
         entitiesResult.getEntities().stream()
-            .map(entity -> (TaskEntity) entity)
+            .map(TaskEntity::of)
             .forEach(
                 entity -> {
                   // Construct a CallContext since the original one has lost

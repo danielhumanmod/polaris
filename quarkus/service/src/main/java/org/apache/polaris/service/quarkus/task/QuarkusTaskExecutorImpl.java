@@ -23,6 +23,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.quarkus.runtime.Startup;
+import io.quarkus.scheduler.Scheduled;
 import io.smallrye.common.annotation.Identifier;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -33,7 +34,6 @@ import org.apache.polaris.core.persistence.MetaStoreManagerFactory;
 import org.apache.polaris.service.quarkus.tracing.QuarkusTracingFilter;
 import org.apache.polaris.service.task.TaskExecutorImpl;
 import org.apache.polaris.service.task.TaskFileIOSupplier;
-import io.quarkus.scheduler.Scheduled;
 
 @ApplicationScoped
 public class QuarkusTaskExecutorImpl extends TaskExecutorImpl {
